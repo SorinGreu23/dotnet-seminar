@@ -19,6 +19,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<BookDbContext>(options =>
     options.UseSqlite("Data Source=bookstore.db"));
 
+// Add memory cache
+builder.Services.AddMemoryCache();
+
 builder.Services.AddScoped<CreateBookHandler>();
 builder.Services.AddScoped<GetAllBooksHandler>();
 builder.Services.AddScoped<DeleteBookHandler>();
@@ -72,8 +75,11 @@ app.UseHttpsRedirection();
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-app.MapPost("/books", async (CreateBookRequest req, CreateBookHandler handler) => 
-    await handler.Handle(req));
+app.MapPost("/books", async (CreateBookProfileRequest req, CreateBookHandler handler) => 
+    await handler.Handle(req))
+    .WithName("CreateBook")
+    .WithDescription("Create a new book with advanced profile information")
+    .WithOpenApi();
 
 app.MapGet("/books", async (GetAllBooksHandler handler) =>
     await handler.Handle(new  GetAllBooksRequest()));

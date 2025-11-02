@@ -1,19 +1,20 @@
 namespace BookStore.Api.Features.Books.DTOs;
 
-public record BookProfileDto(
-    Guid Id,
-    string Title,
-    string Author,
-    string ISBN,
-    string CategoryDisplayName,
-    decimal Price,
-    string FormattedPrice,
-    DateTime PublishedDate,
-    DateTime CreatedAt,
-    string? CoverImageUrl,
-    bool IsAvailable,
-    int StockQuantity,
-    string PublishedAge,
-    string AuthorInitials,
-    string AvailabilityStatus
-);
+public class BookProfileDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = null!;
+    public string Author { get; set; } = null!;
+    public string ISBN { get; set; } = null!;
+    public string CategoryDisplayName { get; set; } = null!;
+    public decimal Price { get; set; }
+    public string FormattedPrice { get; set; } = null!;
+    public DateTime PublishedDate { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public string? CoverImageUrl { get; set; }
+    public bool IsAvailable { get; set; }
+    public int StockQuantity { get; set; }
+    public string PublishedAge { get; set; } = null!;
+    public string AuthorInitials { get; set; } = null!;
+    public string AvailabilityStatus { get; set; } = null!;
+}

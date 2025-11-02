@@ -1,38 +1,50 @@
-﻿using BookStore.Api.Features.Books.Shared.Create;
+﻿using AutoMapper;
+using BookStore.Api.Exceptions;
+using BookStore.Api.Features.Books.DTOs;
+using BookStore.Api.Features.Books.Shared.Create;
 using BookStore.Api.Persistence;
-using BookStore.Api.Validators;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace BookStore.Api.Features.Books.Create;
 
-public class CreateBookHandler(BookDbContext context, ILogger<CreateBookHandler> logger)
+public class CreateBookHandler(
+    BookDbContext context, 
+    ILogger<CreateBookHandler> logger,
+    IMapper mapper,
+    IMemoryCache cache)
 {
-    public async Task<IResult> Handle(CreateBookRequest request)
+    public async Task<IResult> Handle(CreateBookProfileRequest request)
     {
-        logger.LogInformation($"Creating a new book with title: {request.Title} and author: {request.Author}");
-        var validator = new CreateBookValidator();
-        var validationResult = await validator.ValidateAsync(request);
-        
-        if(!validationResult.IsValid)
+        logger.LogInformation(
+            "Creating a new book - Title: {Title}, Author: {Author}, Category: {Category}, ISBN: {ISBN}",
+            request.Title, request.Author, request.Category, request.ISBN);
+
+        // Check ISBN uniqueness
+        var isbnExists = await context.Books.AnyAsync(b => b.ISBN == request.ISBN);
+        if (isbnExists)
         {
-            return Results.BadRequest(validationResult.Errors);
+            logger.LogWarning("Book creation failed - ISBN {ISBN} already exists", request.ISBN);
+            throw new BookIsbnAlreadyExistsException(request.ISBN);
         }
 
-        var book = new Book
-        {
-            Title = request.Title,
-            Author = request.Author,
-            ISBN = request.Isbn,
-            Category = BookCategory.Fiction,
-            Price = 0m,
-            PublishedDate = new DateTime(request.PublicationYear, 1, 1),
-            IsAvailable = true,
-            StockQuantity = 1,
-        };
+        // Map request to entity using AutoMapper
+        var book = mapper.Map<Book>(request);
         
         context.Books.Add(book);
         await context.SaveChangesAsync();
-        logger.LogInformation($"Book created successfully with ID: {book.Id}");
         
-        return Results.Created($"/books/{book.Id}", book);
+        logger.LogInformation(
+            "Book created successfully - ID: {BookId}, Title: {Title}, Category: {Category}", 
+            book.Id, book.Title, book.Category);
+
+        // Invalidate cache
+        cache.Remove("all_books");
+        logger.LogDebug("Cache invalidated for key: all_books");
+
+        // Map to DTO using AutoMapper with all resolvers
+        var bookDto = mapper.Map<BookProfileDto>(book);
+        
+        return Results.Created($"/books/{book.Id}", bookDto);
     }
 }
