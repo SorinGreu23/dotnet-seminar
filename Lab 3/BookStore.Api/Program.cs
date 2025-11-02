@@ -73,6 +73,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseMiddleware<CorrelationMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.MapPost("/books", async (CreateBookProfileRequest req, CreateBookHandler handler) => 
