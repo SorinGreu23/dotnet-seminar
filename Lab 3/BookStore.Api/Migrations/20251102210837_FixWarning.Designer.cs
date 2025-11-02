@@ -3,6 +3,7 @@ using System;
 using BookStore.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BookStore.Api.Migrations
 {
     [DbContext(typeof(BookDbContext))]
-    partial class BookDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251102210837_FixWarning")]
+    partial class FixWarning
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");

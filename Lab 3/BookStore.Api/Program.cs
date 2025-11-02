@@ -54,7 +54,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<BookDbContext>();
-    context.Database.EnsureCreated();
+    await context.Database.MigrateAsync();
 }
 
 // Configure the HTTP request pipeline.
