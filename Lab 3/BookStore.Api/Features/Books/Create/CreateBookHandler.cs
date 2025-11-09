@@ -5,6 +5,7 @@ using BookStore.Api.Exceptions;
 using BookStore.Api.Features.Books.DTOs;
 using BookStore.Api.Features.Books.Shared.Create;
 using BookStore.Api.Persistence;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -14,7 +15,8 @@ public class CreateBookHandler(
     BookDbContext context,
     ILogger<CreateBookHandler> logger,
     IMapper mapper,
-    IMemoryCache cache)
+    IMemoryCache cache,
+    IValidator<CreateBookProfileRequest> validator)
 {
     private const string CacheKey = "all_books";
 
@@ -68,18 +70,18 @@ public class CreateBookHandler(
     {
         var validationStartTime = Stopwatch.GetTimestamp();
 
-        logger.LogDebug(LogEvents.ISBNValidationPerformed, "Performing ISBN validation for ISBN: {ISBN}", request.ISBN);
+        logger.LogDebug(LogEvents.ISBNValidationPerformed, "Performing FluentValidation for request: {Title}", request.Title);
 
-        var isbnExists = await context.Books.AnyAsync(b => b.ISBN == request.ISBN);
-        if (isbnExists)
+        var validationResult = await validator.ValidateAsync(request);
+        if (!validationResult.IsValid)
         {
             var duration = Stopwatch.GetElapsedTime(validationStartTime);
             logger.LogWarning(
                 LogEvents.BookValidationFailed,
-                "Book validation failed - ISBN {ISBN} already exists. ValidationDuration: {ValidationDuration}ms",
-                request.ISBN, duration.TotalMilliseconds);
+                "Book validation failed - Errors: {Errors}. ValidationDuration: {ValidationDuration}ms",
+                string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)), duration.TotalMilliseconds);
 
-            throw new BookIsbnAlreadyExistsException(request.ISBN);
+            throw new Exceptions.ValidationException(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
         }
 
         logger.LogDebug(LogEvents.StockValidationPerformed, "Stock validation - StockQuantity: {StockQuantity}", request.StockQuantity);

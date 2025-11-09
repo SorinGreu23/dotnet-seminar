@@ -13,11 +13,10 @@ public class ErrorResponse()
         Details = details;
     }
 
-    public List<string> Details { get; set; }
+    public List<string> Details { get; set; } = [];
+    public string Message { get; set; } = default!;
 
-    public string Message { get; set; }
-
-    public string ErrorCode { get; set; }
+    public string ErrorCode { get; set; } = default!;
     
-    public string TraceId { get; set; }
+    public string TraceId { get; set; } = default!;
 }

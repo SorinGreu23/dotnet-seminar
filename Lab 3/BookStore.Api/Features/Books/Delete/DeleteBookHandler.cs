@@ -1,5 +1,4 @@
-﻿using BookStore.Api.Features.Books;
-using BookStore.Api.Persistence;
+﻿using BookStore.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Api.Features.Books.Delete;

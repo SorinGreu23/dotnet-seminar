@@ -4,6 +4,7 @@ using BookStore.Api.Features.Books.Shared.Create;
 using BookStore.Api.Features.Books.Overview;
 using BookStore.Api.Features.Books.Delete;
 using BookStore.Api.Features.Books.Get;
+using BookStore.Api.Features.Books.Resolvers;
 using BookStore.Api.Middleware;
 using BookStore.Api.Validators;
 using FluentValidation;
@@ -19,6 +20,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<BookDbContext>(options =>
     options.UseSqlite("Data Source=bookstore.db"));
 
+builder.Services.AddScoped<IApplicationContext>(sp => sp.GetRequiredService<BookDbContext>());
+
 // Add memory cache
 builder.Services.AddMemoryCache();
 
@@ -27,10 +30,17 @@ builder.Services.AddScoped<GetAllBooksHandler>();
 builder.Services.AddScoped<DeleteBookHandler>();
 builder.Services.AddScoped<GetBookHandler>();
 
-builder.Services.AddValidatorsFromAssemblyContaining<CreateBookValidator>();
+// Register AutoMapper resolvers
+builder.Services.AddTransient<AuthorInitialsResolver>();
+builder.Services.AddTransient<AvailabilityStatusResolver>();
+builder.Services.AddTransient<CategoryDisplayResolver>();
+builder.Services.AddTransient<DiscountedPriceResolver>();
+builder.Services.AddTransient<PriceFormatterResolver>();
+builder.Services.AddTransient<PublishedAgeResolver>();
+
+builder.Services.AddValidatorsFromAssemblyContaining<CreateBookProfileValidator>();
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<AdvancedBookMappingProfile>());
 
-// Swagger (Swashbuckle)
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc(
