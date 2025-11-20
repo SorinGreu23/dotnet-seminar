@@ -11,6 +11,10 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace BookStore.Api.Features.Books.Create;
 
+/// <summary>
+/// Handles the creation of books: validation, persistence, cache invalidation and structured
+/// performance logging (including correlation and operation scopes). Returns an advanced profile DTO.
+/// </summary>
 public class CreateBookHandler(
     BookDbContext context,
     ILogger<CreateBookHandler> logger,
@@ -20,6 +24,12 @@ public class CreateBookHandler(
 {
     private const string CacheKey = "all_books";
 
+    /// <summary>
+    /// Validates and persists a new <see cref="Book"/> using mapping profiles, then returns a <see cref="BookProfileDto"/>.
+    /// </summary>
+    /// <param name="request">Incoming creation payload.</param>
+    /// <returns>A Created (201) result containing the mapped <see cref="BookProfileDto"/>.</returns>
+    /// <exception cref="ValidationException">Thrown when validation rules fail.</exception>
     public async Task<IResult> Handle(CreateBookProfileRequest request)
     {
         var operationStartTime = Stopwatch.GetTimestamp();

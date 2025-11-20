@@ -1,4 +1,5 @@
 using BookStore.Api.Common.Mapping;
+using BookStore.Api.Features.Books.DTOs;
 using BookStore.Api.Features.Books.Create;
 using BookStore.Api.Features.Books.Shared.Create;
 using BookStore.Api.Features.Books.Overview;
@@ -38,8 +39,16 @@ builder.Services.AddTransient<DiscountedPriceResolver>();
 builder.Services.AddTransient<PriceFormatterResolver>();
 builder.Services.AddTransient<PublishedAgeResolver>();
 
+// Register validator explicitly + scan assembly
+builder.Services.AddScoped<IValidator<CreateBookProfileRequest>, CreateBookProfileValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateBookProfileValidator>();
-builder.Services.AddAutoMapper(cfg => cfg.AddProfile<AdvancedBookMappingProfile>());
+
+// Register both mapping profiles
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<BookMappingProfile>();
+    cfg.AddProfile<AdvancedBookMappingProfile>();
+});
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -86,19 +95,38 @@ app.UseHttpsRedirection();
 app.UseMiddleware<CorrelationMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-app.MapPost("/books", async (CreateBookProfileRequest req, CreateBookHandler handler) => 
-    await handler.Handle(req))
+app.MapPost("/books", async (CreateBookProfileRequest req, CreateBookHandler handler) =>
+        await handler.Handle(req))
     .WithName("CreateBook")
-    .WithDescription("Create a new book with advanced profile information")
+    .WithSummary("Create a new book")
+    .WithDescription("Creates a new book resource and returns the created advanced book profile DTO.")
+    .WithTags("Books")
+    .Produces<BookProfileDto>(StatusCodes.Status201Created)
+    .ProducesValidationProblem(StatusCodes.Status400BadRequest)
     .WithOpenApi();
 
 app.MapGet("/books", async (GetAllBooksHandler handler) =>
-    await handler.Handle(new  GetAllBooksRequest()));
+        await handler.Handle(new GetAllBooksRequest()))
+    .WithName("GetBooks")
+    .WithSummary("List books")
+    .WithDescription("Returns an overview collection of books.")
+    .WithTags("Books")
+    .WithOpenApi();
 
 app.MapGet("/books/{id:guid}", async (Guid id, GetBookHandler handler) =>
-    await handler.Handle(new GetBookRequest(id)));
+        await handler.Handle(new GetBookRequest(id)))
+    .WithName("GetBookById")
+    .WithSummary("Get book by ID")
+    .WithDescription("Returns the detailed advanced profile of a single book.")
+    .WithTags("Books")
+    .WithOpenApi();
 
 app.MapDelete("/books/{id:guid}", async (Guid id, DeleteBookHandler handler) =>
-    await handler.Handle(new DeleteBookRequest(id)));
+        await handler.Handle(new DeleteBookRequest(id)))
+    .WithName("DeleteBook")
+    .WithSummary("Delete book")
+    .WithDescription("Deletes a book by its unique identifier.")
+    .WithTags("Books")
+    .WithOpenApi();
 
 app.Run();

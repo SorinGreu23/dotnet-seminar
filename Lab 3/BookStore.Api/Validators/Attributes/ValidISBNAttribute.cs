@@ -1,17 +1,16 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
-using System.Linq;
 
 namespace BookStore.Api.Validators.Attributes;
 
 /// <summary>
 /// Server and client-side validation for ISBN values (10 or 13 digits).
 /// </summary>
-public sealed class ValidIsbnAttribute : ValidationAttribute, IClientModelValidator
+public sealed class ValidISBNAttribute : ValidationAttribute, IClientModelValidator
 {
     private const string ClientRuleName = "validisbn";
 
-    public ValidIsbnAttribute()
+    public ValidISBNAttribute()
         : base("{0} must be a valid ISBN containing 10 or 13 digits.")
     {
     }

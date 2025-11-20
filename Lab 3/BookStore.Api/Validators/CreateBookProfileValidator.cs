@@ -10,6 +10,11 @@ using System.Text.RegularExpressions;
 
 namespace BookStore.Api.Validators;
 
+/// <summary>
+/// FluentValidation validator for <see cref="CreateBookProfileRequest"/> encompassing
+/// structural rules, conditional category-specific constraints, async uniqueness checks
+/// and aggregated business rules for complex domain policies.
+/// </summary>
 public class CreateBookProfileValidator : AbstractValidator<CreateBookProfileRequest>
 {
     private readonly IApplicationContext _dbContext;
@@ -30,6 +35,11 @@ public class CreateBookProfileValidator : AbstractValidator<CreateBookProfileReq
         "technology", "software", "hardware", "programming", "engineering", "development", "cloud", "data", "ai", "machine"
     };
 
+    /// <summary>
+    /// Constructs the validator wiring all rule chains and helper predicates.
+    /// </summary>
+    /// <param name="dbContext">Application data context for async uniqueness & business queries.</param>
+    /// <param name="logger">Structured logger for diagnostic and rule outcome messages.</param>
     public CreateBookProfileValidator(IApplicationContext dbContext, ILogger<CreateBookProfileValidator> logger)
     {
         _dbContext = dbContext;
@@ -105,12 +115,14 @@ public class CreateBookProfileValidator : AbstractValidator<CreateBookProfileReq
             .MustAsync(PassBusinessRules).WithMessage("Business rules validation failed.");
     }
 
+    /// <summary>Ensures title does not contain inappropriate words.</summary>
     private bool BeValidTitle(string title)
     {
         var words = title.Split(new[] { ' ', '-', '.', ',', ';', ':', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
         return !words.Any(word => InappropriateWords.Contains(word));
     }
 
+    /// <summary>Async uniqueness check for Title+Author combination.</summary>
     private async Task<bool> BeUniqueTitle(CreateBookProfileRequest request, string title, CancellationToken cancellationToken)
     {
         _logger.LogInformation(LogEvents.DatabaseOperationStarted, "Checking title uniqueness for Title: {Title}, Author: {Author}", title, request.Author);
@@ -123,6 +135,7 @@ public class CreateBookProfileValidator : AbstractValidator<CreateBookProfileReq
         return !exists;
     }
 
+    /// <summary>Validates allowed author characters (letters, spaces, hyphens, apostrophes, dots).</summary>
     private bool BeValidAuthorName(string author)
     {
         // Allow letters, spaces, hyphens, apostrophes, dots
@@ -130,6 +143,7 @@ public class CreateBookProfileValidator : AbstractValidator<CreateBookProfileReq
         return regex.IsMatch(author);
     }
 
+    /// <summary>Validates ISBN is 10 or 13 digits ignoring hyphens.</summary>
     private bool BeValidISBN(string isbn)
     {
         // Remove hyphens for validation
@@ -143,6 +157,7 @@ public class CreateBookProfileValidator : AbstractValidator<CreateBookProfileReq
         return cleanIsbn.All(char.IsDigit);
     }
 
+    /// <summary>Async uniqueness check for ISBN value.</summary>
     private async Task<bool> BeUniqueISBN(CreateBookProfileRequest request, string isbn, CancellationToken cancellationToken)
     {
         _logger.LogInformation(LogEvents.ISBNValidationPerformed, "Checking ISBN uniqueness for ISBN: {ISBN}", isbn);
@@ -155,6 +170,7 @@ public class CreateBookProfileValidator : AbstractValidator<CreateBookProfileReq
         return !exists;
     }
 
+    /// <summary>Validates optional image URL format and extension.</summary>
     private bool BeValidImageUrl(string? url)
     {
         if (string.IsNullOrEmpty(url))
@@ -172,18 +188,21 @@ public class CreateBookProfileValidator : AbstractValidator<CreateBookProfileReq
         return validExtensions.Contains(extension);
     }
 
+    /// <summary>Checks presence of at least one technical keyword in the title.</summary>
     private bool ContainTechnicalKeywords(string title)
     {
         var words = title.Split(new[] { ' ', '-', '.', ',', ';', ':', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
         return words.Any(word => TechnicalKeywords.Contains(word));
     }
 
+    /// <summary>Ensures children's titles avoid restricted / inappropriate words.</summary>
     private bool BeAppropriateForChildren(string title)
     {
         var words = title.Split(new[] { ' ', '-', '.', ',', ';', ':', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
         return !words.Any(word => RestrictedChildrenWords.Contains(word) || InappropriateWords.Contains(word));
     }
 
+    /// <summary>Cross-field rule enforcing stock cap for expensive books (&gt;$100).</summary>
     private bool HaveLimitedStockForExpensiveBooks(CreateBookProfileRequest request)
     {
         if (request.Price <= 100)
@@ -200,12 +219,16 @@ public class CreateBookProfileValidator : AbstractValidator<CreateBookProfileReq
         return isValid;
     }
 
+    /// <summary>Technical recency check (published within last 5 years).</summary>
     private bool BeRecentTechnicalBook(DateTime publishedDate)
     {
         var cutoff = DateTime.UtcNow.AddYears(-5);
         return publishedDate >= cutoff;
     }
 
+    /// <summary>
+    /// Aggregates business policy validation (daily limit, category pricing/content, stock constraints).
+    /// </summary>
     private async Task<bool> PassBusinessRules(CreateBookProfileRequest request, CancellationToken cancellationToken)
     {
         // Rule 1: Daily book addition limit (max 500 per day)

@@ -1,7 +1,16 @@
 namespace BookStore.Api.Common.Logging;
 
+/// <summary>
+/// Extension methods providing structured logging helpers for book operations & performance metrics.
+/// </summary>
 public static class LoggingExtensions
 {
+    /// <summary>
+    /// Logs a structured summary of a book creation operation including timing and success state.
+    /// CorrelationId (if present in scope) will be automatically included by the logging infrastructure.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="metrics">Captured metrics object.</param>
     public static void LogBookCreationMetrics(
         this ILogger logger,
         BookCreationMetrics metrics)
